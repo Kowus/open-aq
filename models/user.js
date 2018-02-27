@@ -77,4 +77,14 @@ User.methods.comparePasswords = (password, cb) => {
     })
 }
 
+
+User.methods.comparePasswords = (password, cb) => {
+    const hashbuf = Buffer.alloc(securePassword.HASH_BYTES);
+    hashbuf.set(this.password);
+    pwd.verify(Buffer.from(password), hashbuf, (err, isMatch) => {
+        if (err) return cb(err);
+        cb(null, isMatch === securePassword.VALID)
+    })
+}
+
 module.exports = mongoose.model('User', User);
