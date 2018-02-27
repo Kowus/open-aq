@@ -42,6 +42,10 @@ app.use(session({
   secret: env.session.secret,
   store: new RedisStore({ client: redis })
 }));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(flash());
+
 
 
 app.use('/', index);
