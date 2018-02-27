@@ -12,7 +12,7 @@ const express = require('express'),
   compression = require('compression'),
   redis = require('redis').createClient(env.redis.url, { no_ready_check: true }),
   RedisStore = require('connect-redis')(session),
-  helmet = require('helmet'),
+  helmet = require('helmet')
   ;
 let mongoose = require('mongoose');
 
