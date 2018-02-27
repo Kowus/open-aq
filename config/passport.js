@@ -1,5 +1,6 @@
 const LocalStrategy = require('passport-local').Strategy,
-    env = require('../lib/env')
+    env = require('../lib/env'),
+    jwt = require('jsonwebtoken')
     ;
 let User = require('../models/user');
 
@@ -18,7 +19,7 @@ module.exports = passport => {
         usernameField: 'username',
         passwordField: 'password',
         passReqToCallback: true
-    }, async (req, username, password, done) => {
+    }, async function (req, username, password, done) {
         let userEmail,
             userUsname
             ;
@@ -33,7 +34,7 @@ module.exports = passport => {
                     given_name: req.body.given_name,
                     family_name: req.body.family_name,
                     email: req.body.email,
-                    password: req.body.password
+                    password: password
                 });
                 let user;
                 try {
@@ -52,7 +53,7 @@ module.exports = passport => {
                         return done(error);
                     }
 
-                } catch (err) {
+                } catch (error) {
                     console.error(error);
                     return done(error);
                 }
@@ -67,26 +68,22 @@ module.exports = passport => {
         usernameField: 'username',
         passwordField: 'password',
         passReqToCallback: true
-    }, async (req, username, password, done) => {
+    }, async function (req, username, password, done) {
         let user;
         try {
             user = await User.findOne({ email: username.toLowerCase() }) || await User.findOne({ username: username.toLowerCase() });
             if (!user) {
                 return done(null, false, req.flash('loginMessage', 'No user found'));
             } else {
-                let isMatch;
-                try {
-                    isMatch = user.comparePassword(req.body.password);
-                    if (isMatch) {
-                        return done(null, user)
-                    } else {
+                user.comparePasswords(req.body.password, function (err, isMatch) {
+                    if (isMatch && !err) {
+                        return done(null, user);
+                    }
+                    else {
+                        console.log(err)
                         return done(null, false, req.flash('loginMessage', 'Email or Password incorrect'));
                     }
-                } catch (error) {
-                    console.error(error)
-                    return done(null, false, req.flash('loginMessage', 'Email or Password incorrect'));
-
-                }
+                });
             }
         } catch (err) {
             console.error(err);

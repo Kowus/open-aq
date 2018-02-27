@@ -15,6 +15,11 @@ router.post('/signup', isNotLoggedIn, passport.authenticate('local-signup', {
   failureRedirect: '/signup',
   failureFlash: true
 }));
+router.post('/login', isNotLoggedIn, passport.authenticate('local-login', {
+  successRedirect: '/profile',
+  failureRedirect: '/index',
+  failureFlash: true
+}));
 
 
 module.exports = router;

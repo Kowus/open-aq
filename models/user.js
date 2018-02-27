@@ -25,6 +25,10 @@ let pwd = securePassword(),
             lowercase: true,
             trim: true
         },
+        password: {
+            type: Buffer,
+            required: true
+        },
         group: {
             type: String,
             default: 'user'
@@ -42,7 +46,7 @@ let pwd = securePassword(),
         }
 
     });
-User.pre('validate', next => {
+User.pre('validate', function (next) {
     let user = this;
     if (this.isNew) {
         user.account_stat.confirmed.key = gib();
@@ -52,9 +56,8 @@ User.pre('validate', next => {
     }
 })
 
-User.pre('save', next => {
+User.pre('save', function (next) {
     let user = this;
-
     if (this.isModified('password') || this.isNew) {
         let user_password = Buffer.from(user.password);
         pwd.hash(user_password, (err, hash) => {
@@ -68,7 +71,7 @@ User.pre('save', next => {
 });
 
 
-User.methods.comparePasswords = (password, cb) => {
+User.methods.comparePasswords = function (password, cb) {
     const hashbuf = Buffer.alloc(securePassword.HASH_BYTES);
     let user = this;
     hashbuf.set(user.password);
@@ -88,8 +91,10 @@ User.methods.comparePasswords = (password, cb) => {
             })
         }
 
-        cb(null, result === securePassword.VALID);
+        return cb(null, result === securePassword.VALID);
     });
 }
+
+
 
 module.exports = mongoose.model('User', User);
