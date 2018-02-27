@@ -65,8 +65,7 @@ User.pre('save', next => {
     } else {
         return next();
     }
-})
-
+});
 
 
 User.methods.comparePasswords = (password, cb) => {
