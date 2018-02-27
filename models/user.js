@@ -1,6 +1,7 @@
 const mongoose = require('mongoose'),
     Schema = mongoose.Schema,
-    securePassword = require('secure-password')
+    securePassword = require('secure-password'),
+    gib = require('../lib/gibberish')
     ;
 let pwd = securePassword(),
     User = new Schema({
@@ -41,7 +42,30 @@ let pwd = securePassword(),
         }
 
     });
+User.pre('validate', next => {
+    let user = this;
+    if (this.isNew) {
+        user.account_stat.confirmed.key = gib();
+        return next();
+    } else {
+        next();
+    }
+})
 
+User.pre('save', next => {
+    let user = this;
+
+    if (this.isModified('password') || this.isNew) {
+        let user_password = Buffer.from(user.password);
+        pwd.hash(user_password, (err, hash) => {
+            if (err) return next(err);
+            user.password = hash;
+            next();
+        })
+    } else {
+        return next();
+    }
+})
 
 
 
