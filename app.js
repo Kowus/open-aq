@@ -12,8 +12,15 @@ const express = require('express'),
   compression = require('compression'),
   redis = require('redis').createClient(env.redis.url, { no_ready_check: true }),
   RedisStore = require('connect-redis')(session),
-  helmet = require('helmet')
+  helmet = require('helmet'),
   ;
+let mongoose = require('mongoose');
+
+mongoose.Promise = require('bluebird');
+mongoose.connect(env.database.url, {
+  reconnectTries: Number.MAX_VALUE,
+  reconnectInterval: 2000
+})
 
 
 var index = require('./routes/index');
@@ -75,6 +82,24 @@ app.use(function (err, req, res, next) {
   res.render('error');
 });
 
+// Mongoose Defaults
+mongoose.connection.on('connected', function () {
+  console.log('Mongoose default connection connected');
+});
+mongoose.connection.on('error', function (err) {
+  console.log('Mongoose default connection error:' + err);
+});
+mongoose.connection.on('disconnected', function () {
+  console.log('Mongoose default connection disconnected');
+});
+process.on('SIGINT', function () {
+  mongoose.connection.close(function () {
+    console.log("Mongoose default connection disconnected on app termination");
+    process.exit(0);
+  });
+});
+
+// Redis Error Handler
 redis.on('error', err => {
   console.log(`Redis default connection error: ${err}`)
 })
