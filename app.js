@@ -72,4 +72,8 @@ app.use(function (err, req, res, next) {
   res.render('error');
 });
 
+redis.on('error', err => {
+  console.log(`Redis default connection error: ${err}`)
+})
+
 module.exports = app;
