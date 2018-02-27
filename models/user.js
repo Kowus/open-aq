@@ -70,21 +70,26 @@ User.pre('save', next => {
 
 User.methods.comparePasswords = (password, cb) => {
     const hashbuf = Buffer.alloc(securePassword.HASH_BYTES);
-    hashbuf.set(this.password);
-    pwd.verify(Buffer.from(password), hashbuf, (err, isMatch) => {
+    let user = this;
+    hashbuf.set(user.password);
+    pwd.verify(Buffer.from(password), hashbuf, function (err, result) {
         if (err) return cb(err);
-        cb(null, isMatch === securePassword.VALID)
-    })
-}
+        if (result === securePassword.VALID_NEEDS_REHASH) {
+            pwd.hash(password, (err, hash) => {
+                if (err) return cb(err);
+                user.password = hash;
+                user.save(err => {
+                    if (err) {
+                        console.error(err);
+                        return cb(null, true);
+                    }
+                    return cb(null, true);
+                })
+            })
+        }
 
-
-User.methods.comparePasswords = (password, cb) => {
-    const hashbuf = Buffer.alloc(securePassword.HASH_BYTES);
-    hashbuf.set(this.password);
-    pwd.verify(Buffer.from(password), hashbuf, (err, isMatch) => {
-        if (err) return cb(err);
-        cb(null, isMatch === securePassword.VALID)
-    })
+        cb(null, result === securePassword.VALID);
+    });
 }
 
 module.exports = mongoose.model('User', User);
