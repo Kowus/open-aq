@@ -52,7 +52,17 @@ let pwd = securePassword(),
         ]
     });
 
-
+User.methods.verifyToken = function (token, namespace, cb) {
+    let user = this;
+    // Use Immutable namespace if one is not defined
+    if (arguments.length === 1) namespace = 'App Password';
+    // get a hash of the user's token
+    let user_hash_buff = secureToken.hash(Buffer.from(token), namespace);
+    // filter check user token if hash exists
+    let filteredUser = user.tokens.filter(tokens => tokens.token == user_hash_buff);
+    // check whether buffer exists in the token
+    return cb(null, filteredUser.length > 0)
+};
 
 User.methods.comparePasswords = function (password, cb) {
     const hashbuf = Buffer.alloc(securePassword.HASH_BYTES);
