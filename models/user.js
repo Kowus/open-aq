@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer';
+
 const mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     securePassword = require('secure-password'),
@@ -43,9 +45,19 @@ let pwd = securePassword(),
                     type: String
                 }
             }
-        }
+        },
+        tokens: [
+            {
+                token: Buffer,
+                namespace: String
+            }
+        ]
+
+
 
     });
+
+
 User.pre('validate', function (next) {
     let user = this;
     if (this.isNew) {
