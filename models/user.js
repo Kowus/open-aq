@@ -1,9 +1,7 @@
-import { Buffer } from 'buffer';
-
 const mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     securePassword = require('secure-password'),
-    gib = require('../lib/gibberish')
+    secureToken = require('secure-token')
     ;
 let pwd = securePassword(),
     User = new Schema({
@@ -52,35 +50,8 @@ let pwd = securePassword(),
                 namespace: String
             }
         ]
-
-
-
     });
 
-
-User.pre('validate', function (next) {
-    let user = this;
-    if (this.isNew) {
-        user.account_stat.confirmed.key = gib();
-        return next();
-    } else {
-        next();
-    }
-})
-
-User.pre('save', function (next) {
-    let user = this;
-    if (this.isModified('password') || this.isNew) {
-        let user_password = Buffer.from(user.password);
-        pwd.hash(user_password, (err, hash) => {
-            if (err) return next(err);
-            user.password = hash;
-            next();
-        })
-    } else {
-        return next();
-    }
-});
 
 
 User.methods.comparePasswords = function (password, cb) {
@@ -107,6 +78,29 @@ User.methods.comparePasswords = function (password, cb) {
     });
 }
 
+User.pre('validate', function (next) {
+    let user = this;
+    if (this.isNew) {
+        user.account_stat.confirmed.key = secureToken.create().toString('base64');
+        return next();
+    } else {
+        next();
+    }
+})
+
+User.pre('save', function (next) {
+    let user = this;
+    if (this.isModified('password') || this.isNew) {
+        let user_password = Buffer.from(user.password);
+        pwd.hash(user_password, (err, hash) => {
+            if (err) return next(err);
+            user.password = hash;
+            next();
+        })
+    } else {
+        return next();
+    }
+});
 
 
 module.exports = mongoose.model('User', User);
