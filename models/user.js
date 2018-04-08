@@ -1,8 +1,7 @@
-const mongoose = require('mongoose'),
+const mongoose = require("mongoose"),
     Schema = mongoose.Schema,
-    securePassword = require('secure-password'),
-    secureToken = require('secure-token')
-    ;
+    securePassword = require("secure-password"),
+    secureToken = require("secure-token");
 let pwd = securePassword(),
     User = new Schema({
         email: {
@@ -31,7 +30,7 @@ let pwd = securePassword(),
         },
         group: {
             type: String,
-            default: 'user'
+            default: "user"
         },
         account_stat: {
             confirmed: {
@@ -46,29 +45,34 @@ let pwd = securePassword(),
         },
         tokens: [
             {
-                token: Buffer,
-                namespace: String
+                token: String,
+                namespace: {
+                    type: String,
+                    default: "App Password"
+                }
             }
         ]
     });
 
-User.methods.verifyToken = function (token, namespace, cb) {
+User.methods.verifyToken = function(token, namespace, cb) {
     let user = this;
     // Use Immutable namespace if one is not defined
-    if (arguments.length === 1) namespace = 'App Password';
+    if (arguments.length === 1) namespace = "App Password";
     // get a hash of the user's token
     let user_hash_buff = secureToken.hash(Buffer.from(token), namespace);
     // filter check user token if hash exists
-    let filteredUser = user.tokens.filter(tokens => tokens.token == user_hash_buff);
+    let filteredUser = user.tokens.filter(
+        tokens => tokens.token == user_hash_buff
+    );
     // check whether buffer exists in the token
-    return cb(null, filteredUser.length > 0)
+    return cb(null, filteredUser.length > 0);
 };
 
-User.methods.comparePasswords = function (password, cb) {
+User.methods.comparePasswords = function(password, cb) {
     const hashbuf = Buffer.alloc(securePassword.HASH_BYTES);
     let user = this;
     hashbuf.set(user.password);
-    pwd.verify(Buffer.from(password), hashbuf, function (err, result) {
+    pwd.verify(Buffer.from(password), hashbuf, function(err, result) {
         if (err) return cb(err);
         if (result === securePassword.VALID_NEEDS_REHASH) {
             pwd.hash(password, (err, hash) => {
@@ -80,37 +84,38 @@ User.methods.comparePasswords = function (password, cb) {
                         return cb(null, true);
                     }
                     return cb(null, true);
-                })
-            })
+                });
+            });
         }
 
         return cb(null, result === securePassword.VALID);
     });
-}
+};
 
-User.pre('validate', function (next) {
+User.pre("validate", function(next) {
     let user = this;
     if (this.isNew) {
-        user.account_stat.confirmed.key = secureToken.create().toString('base64');
+        user.account_stat.confirmed.key = secureToken
+            .create()
+            .toString("base64");
         return next();
     } else {
         next();
     }
-})
+});
 
-User.pre('save', function (next) {
+User.pre("save", function(next) {
     let user = this;
-    if (this.isModified('password') || this.isNew) {
+    if (this.isModified("password") || this.isNew) {
         let user_password = Buffer.from(user.password);
         pwd.hash(user_password, (err, hash) => {
             if (err) return next(err);
             user.password = hash;
             next();
-        })
+        });
     } else {
         return next();
     }
 });
 
-
-module.exports = mongoose.model('User', User);
+module.exports = mongoose.model("User", User);
